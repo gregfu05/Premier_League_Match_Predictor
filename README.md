@@ -1,128 +1,65 @@
-# EPL xG Prediction
+```markdown
+# Premier League Goals Predictor
 
-## Project Overview
+A streamlined machine-learning project to predict goals scored by Premier League teams, powered by a single SQL data source and one main analysis notebook.
 
-This project implements a machine learning pipeline to predict Expected Goals (xG) for English Premier League (EPL) teams on a per-match basis using seasonal data. The goal is to quantify and forecast offensive and defensive performance, helping analysts and fans better understand team strengths and upcoming match expectations.
-
-### Key Components
-
-- **Data Collection & Preprocessing**: Pulls historical EPL data from sources like Opta or StatsBomb, cleans it, normalizes formats, and creates initial variables such as shots, possession, team ratings, and form indicators.
-- **Feature Engineering**: Builds advanced features including moving averages, shot quality metrics, home/away splits, and situational factors like rest days or injuries.
-- **Modeling**: Trains regression and machine learning models (e.g., Poisson regression, XGBoost, Random Forest) and neural networks to predict xG.
-- **Evaluation**: Assesses model performance with RMSE, MAE, cross-validation, and visual tools like calibration plots.
-- **Deployment**: Provides scripts for making predictions and Jupyter notebooks for analysis.
-
-## Repository Structure
+## Project Structure
 
 ```
-├── data/                   # Datasets (raw and processed)
-│   ├── raw/                # Original data downloads
-│   └── processed/          # Cleaned and feature-enhanced datasets
-├── src/                    # Source code
-│   ├── data_pipeline/      # Data ingestion and preprocessing
-│   ├── features/           # Feature engineering scripts
-│   ├── models/             # Model training and prediction
-│   ├── evaluation/         # Evaluation tools and metrics
-│   └── utils/              # General helper functions
-├── notebooks/              # Interactive notebooks for analysis
-├── outputs/                # Output files (e.g., trained models, plots)
-├── tests/                  # Unit tests
-├── requirements.txt        # Dependencies
-└── README.md               # Project documentation
+your_project/
+├── data/
+│   └── pl_data.sql
+├── notebooks/
+│   ├── analysis_and_modeling.ipynb
+│   └── final_report.ipynb
+├── outputs/
+│   ├── figures/
+│   └── predictions.csv
+├── environment.yml
+└── README.md
 ```
 
-## Getting Started
+## Setup
 
-1. **Clone the repository**:
+1. Clone this repository:  
    ```bash
-   git clone https://github.com/your-org/epl-xg-prediction.git
-   cd epl-xg-prediction
+   git clone https://github.com/your_username/ML_group_project.git
    ```
-
-2. **Set up the environment**:
+2. Create and activate your environment:  
    ```bash
-   python3 -m venv venv
-   source venv/bin/activate
-   pip install -r requirements.txt
-   ```
+   conda env create -f environment.yml
+   conda activate pl-goals-predictor
+   ```  
+   (Or `pip install -r requirements.txt` if you prefer pip.)
 
-## Running the Pipeline
+## Analysis & Modeling
 
-1. **Download and preprocess data**:
-   ```bash
-   python src/data_pipeline/fetch_data.py --season 2023-2024
-   python src/data_pipeline/process_data.py
-   ```
+- Open and run `notebooks/analysis_and_modeling.ipynb`.  
+- Sections cover:  
+  1. **Data Ingestion** (connect to `data/pl_data.sql`)  
+  2. **Exploratory Data Analysis**  
+  3. **Feature Engineering**  
+  4. **Model Training & Evaluation**  
+  5. **Generating Predictions**  
+- Final predictions are saved as `outputs/predictions.csv`.
 
-2. **Create features**:
-   ```bash
-   python src/features/build_features.py
-   ```
+## Final Report
 
-3. **Train the model**:
-   ```bash
-   python src/models/train_model.py --model xgboost
-   ```
+- See `notebooks/final_report.ipynb` for a polished narrative of objectives, methods, and key visualizations.
 
-4. **Evaluate performance**:
-   ```bash
-   python src/evaluation/evaluate_model.py --model xgboost
-   ```
+## Outputs
 
-5. **Make predictions**:
-   ```bash
-   python src/models/predict.py --fixture_list fixtures.csv
-   ```
-
-## Git Workflow
-
-This project uses a **Feature Branch Workflow** with Git to maintain modular development and clean integration:
-
-1. **Main Branch (`main`)**:
-   - Holds the production-ready version of the project.
-   - Protected from direct commits; changes must go through Pull Requests (PRs).
-
-2. **Develop Branch (`develop`)** *(optional)*:
-   - A staging branch that combines features before merging into `main`.
-
-3. **Feature Branches**:
-   - Created off `develop` (or `main` if no `develop` branch exists).
-   - Naming convention: `feature/<short-description>` (e.g., `feature/xg-model`)
-   - Example:
-     ```bash
-     git checkout develop
-     git pull origin develop
-     git checkout -b feature/add-xg-model
-     # make changes
-     git add .
-     git commit -m "Add xG prediction model"
-     git push origin feature/add-xg-model
-     ```
-
-4. **Pull Requests**:
-   - Open a PR into `develop` (or `main`).
-   - Include a summary of changes, relevant screenshots, or test results.
-   - Reviewers provide feedback. Resolve comments before merging.
-   - Pass all tests (`pytest`) and follow linting guidelines (e.g., `flake8`).
-
-5. **Merging**:
-   - Once approved, squash or merge the PR.
-   - Delete the feature branch after merging.
-   - CI/CD pipelines will run post-merge.
-
-6. **Hotfix Branches**:
-   - For critical fixes, create from `main`: `hotfix/<issue-name>`.
-   - Merge back into both `main` and `develop`.
+- **Figures**: stored in `outputs/figures/`  
+- **Predictions**: `outputs/predictions.csv`
 
 ## Contributing
 
-Interested in improving this project? Check out our [CONTRIBUTING.md](CONTRIBUTING.md) guide to learn how to contribute, report bugs, or suggest features.
+1. Fork the repository  
+2. Create a branch (`git checkout -b feature/your-feature`)  
+3. Make your changes and add tests if necessary  
+4. Submit a Pull Request
 
 ## License
 
 Distributed under the MIT License. See [LICENSE](LICENSE) for details.
-
-## Maintainers
-
-- **Lead Developer**: Jane Doe – [jane.doe@example.com](mailto:jane.doe@example.com)
-- **Data Engineer**: John Smith – [john.smith@example.com](mailto:john.smith@example.com)
+```
