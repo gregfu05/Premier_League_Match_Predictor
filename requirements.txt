@@ -117,3 +117,7 @@ webcolors==24.11.1
 webencodings==0.5.1
 websocket-client==1.8.0
 xgboost==3.0.0
+requests==2.32.3
+urllib3==2.3.0
+SQLAlchemy==2.0.40
+
