@@ -75,18 +75,36 @@ def split_and_encode(db):
     encoded_val_df = pd.DataFrame(encoded_val, columns=encoded_names, index=X_val.index)
     encoded_test_df = pd.DataFrame(encoded_test, columns=encoded_names, index=X_test.index)
 
-    X_train = X_train.drop(columns=cat_cols).join(encoded_train_df)
-    X_val = X_val.drop(columns=cat_cols).join(encoded_val_df)
-    X_test = X_test.drop(columns=cat_cols).join(encoded_test_df)
+    # Drop original categorical columns
+    X_train = X_train.drop(columns=cat_cols)
+    X_val   = X_val.drop(columns=cat_cols)
+    X_test  = X_test.drop(columns=cat_cols)
+
+    # Join encoded features, reindex val/test to match training columns
+    X_train = X_train.join(encoded_train_df)
+    X_val   = X_val.join(encoded_val_df.reindex(columns=encoded_train_df.columns, fill_value=0))
+    X_test  = X_test.join(encoded_test_df.reindex(columns=encoded_train_df.columns, fill_value=0))
 
     # Drop non-numeric columns
     X_train = X_train.select_dtypes(include=[np.number])
     X_val = X_val.select_dtypes(include=[np.number])
     X_test = X_test.select_dtypes(include=[np.number])
 
+    # Fill any remaining NaNs
+    X_train = X_train.fillna(0)
+    X_val = X_val.fillna(0)
+    X_test = X_test.fillna(0)
+
+    # Verify they are gone
+    print("✅ After fillna:")
+    print("NaNs in X_train (before scaling):", X_train.isna().sum().sum())
+    print("NaNs in X_val (before scaling):", X_val.isna().sum().sum())
+    print("NaNs in X_test (before scaling):", X_test.isna().sum().sum())
+
+
+
     return X_train, X_val, X_test, y_train, y_val, y_test
 
-    
 
 
 def scale_features(X_train, X_val, X_test):
@@ -94,6 +112,12 @@ def scale_features(X_train, X_val, X_test):
     X_train_scaled = scaler.fit_transform(X_train)
     X_val_scaled = scaler.transform(X_val)
     X_test_scaled = scaler.transform(X_test)
+
+    # Check if NaNs appeared during scaling
+    import numpy as np
+    print("NaNs in X_train_scaled:", np.isnan(X_train_scaled).sum())
+    print("NaNs in X_val_scaled:", np.isnan(X_val_scaled).sum())
+    print("NaNs in X_test_scaled:", np.isnan(X_test_scaled).sum())
     return X_train_scaled, X_val_scaled, X_test_scaled
 
 
