@@ -3,10 +3,11 @@ import numpy as np
 import sqlite3
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
+import os
 
 
 def load_data():
-    base_dir = os.path.dirname(os.path.abspath(_file_))
+    base_dir = os.path.dirname(os.path.abspath(__file__))
     db_path = os.path.join(base_dir, "data", "EPL_database.db")
     conn = sqlite3.connect(db_path)
     season_tables = [
@@ -39,8 +40,13 @@ def preprocess_data(db):
     team_to_id = {team: idx for idx, team in enumerate(teams)}
     db['HomeTeam_ID'] = db['HomeTeam'].map(team_to_id)
     db['AwayTeam_ID'] = db['AwayTeam'].map(team_to_id)
+    # Drop unnecessary or problematic string columns
+    db.drop(columns=['Div', 'Date','FTR'], inplace=True, errors='ignore')
+
+
 
     return db
+
 
 
 def split_and_encode(db):
@@ -74,10 +80,24 @@ def split_and_encode(db):
     X_val = X_val.drop(columns=cat_cols).join(encoded_val_df)
     X_test = X_test.drop(columns=cat_cols).join(encoded_test_df)
 
+    print("Non-numeric columns in X_train:")
+    print(X_train.select_dtypes(include=['object']).columns)
+
+
     return X_train, X_val, X_test, y_train, y_val, y_test
 
 
 def scale_features(X_train, X_val, X_test):
+    # Drop string columns if any
+    X_train = X_train.select_dtypes(exclude=['object'])
+    X_val = X_val.select_dtypes(exclude=['object'])
+    X_test = X_test.select_dtypes(exclude=['object'])
+
+    # Fill missing values
+    X_train = X_train.fillna(0)
+    X_val = X_val.fillna(0)
+    X_test = X_test.fillna(0)
+
     scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train)
     X_val_scaled = scaler.transform(X_val)
