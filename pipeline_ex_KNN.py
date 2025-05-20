@@ -96,7 +96,7 @@ def split_and_encode(db):
     X_test = X_test.fillna(0)
 
     # Verify they are gone
-    print("✅ After fillna:")
+    print("After fillna:")
     print("NaNs in X_train (before scaling):", X_train.isna().sum().sum())
     print("NaNs in X_val (before scaling):", X_val.isna().sum().sum())
     print("NaNs in X_test (before scaling):", X_test.isna().sum().sum())
