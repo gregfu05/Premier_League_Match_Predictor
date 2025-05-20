@@ -44,7 +44,7 @@ def split_data(db):
     X = db.drop(columns=['FTHG', 'FTAG'])
     y = db[['FTHG', 'FTAG']]
 
-    train_end, val_end = -10, -5
+    train_end, val_end = -100, -50
     X_train, y_train = X.iloc[:train_end], y.iloc[:train_end]
     X_val, y_val = X.iloc[train_end:val_end], y.iloc[train_end:val_end]
     X_test, y_test = X.iloc[val_end:], y.iloc[val_end:]
