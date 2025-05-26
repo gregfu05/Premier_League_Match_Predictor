@@ -37,7 +37,7 @@ This script downloads the latest data and updates the SQLite database used in th
 
 ### 3. Run the LightGBM pipeline
 
-Navigate to and run all cells in Final_Model.ipynb. This notebook contains:
+Navigate to and run all cells in `Final_Model.ipynb`. This notebook contains:
 
 - All necessary feature engineering and EDA
 
