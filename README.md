@@ -4,7 +4,7 @@
 
 This repository contains a machine learning project aimed at predicting the number of goals scored in Premier League matches. Various models were explored, including LightGBM, MLP, KNN, Random Forest, and XGBoost.
 
-Through experimentation and evaluation, **LightGBM** demonstrated the best performance on our data. To simplify usage and ensure clarity, a single notebook — `Final_Model.ipynb` — consolidates all steps: from data preprocessing and feature engineering to exploratory data analysis (EDA) and final model training with LightGBM.
+Through experimentation and evaluation, **LightGBM** demonstrated the best performance on our data. To simplify usage and ensure clarity, a single folder — `Final Model` — Includes all the final and best files: the best modifyed pipeline, and the LightGBM notebook where the model evaluation is shown.
 
 For comparison, we also include a complete notebook for the second-best performing model, the MLP (Multi-Layer Perceptron). The remaining models (KNN, Random Forest, XGBoost, etc.) are accessible via a modular pipeline that allows each team member to experiment independently with consistent data transformations.
 
@@ -37,11 +37,8 @@ This script downloads the latest data and updates the SQLite database used in th
 
 ### 3. Run the LightGBM pipeline
 
-Navigate to and run all cells in `Final_Model.ipynb`. This notebook contains:
+Navigate to and run all cells in `Final_LightGBM_Model.ipynb`. This notebook contains:
 
-- All necessary feature engineering and EDA
-
-- Baseline comparison
 
 - LightGBM training and evaluation
 
@@ -51,6 +48,7 @@ Navigate to and run all cells in `Final_Model.ipynb`. This notebook contains:
 
 ### Additional Model
 
+For how the EDA and Feature Engineering was initially computed, go to `ML_project.ipynb`
 As stated before, we also provide a full notebook implementation for MLP, the second-best performing model. To run it, follow the same steps as above for the Jupyter notebook `MLP_notebook.ipynb`
 
 ---
