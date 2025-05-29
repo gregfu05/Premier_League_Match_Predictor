@@ -31,13 +31,13 @@ Run the following script to fetch the most up-to-date match data:
 ```bash
 python3 scrape_epl.py
 ```
-This script downloads the latest data and updates the SQLite database used in the notebooks.
+This script downloads the latest data and updates the SQLite database used in the notebooks. Note that for this reason, if the notebook is runned after a 1 week period, the results inlcuding performance metrics, graphs ecc., will be different due to new data (new Premier League matches) coming in.
 
 ---
 
 ### 3. Run the LightGBM pipeline
 
-Navigate to and run all cells in `Final_LightGBM_Model.ipynb`. This notebook contains:
+Navigate to and run all cells in `Final_LightGBM_Model.ipynb`, inside the `Final Model` folder. This notebook contains:
 
 
 - LightGBM training and evaluation
