@@ -39,13 +39,137 @@ def load_data():
     return db
 
 
+def add_engineered_features(db: pd.DataFrame) -> pd.DataFrame:
+    """
+    Adds sophisticated feature engineering including rolling statistics, 
+    performance rates, composite indices, and head-to-head statistics.
+    
+    Features created:
+    - Rolling averages for goals, shots, corners, fouls (last 5 games)
+    - Win/draw/loss rates (last 5 games)
+    - Offensive and defensive composite indices
+    - Head-to-head historical performance
+    - Team strength differentials
+    """
+    db = db.reset_index(drop=True)
+
+    # Rolling averages for various match statistics (last 5 games)
+    for label, team_col, goal_col in [
+        ("avg_goals_L5_home",  "HomeTeam", "FTHG"),
+        ("avg_goals_L5_away",  "AwayTeam", "FTAG"),
+        ("avg_shots_home_L5",  "HomeTeam", "HS"),
+        ("avg_shots_away_L5",  "AwayTeam", "AS"),
+        ("avg_shots_ont_home_L5",  "HomeTeam", "HST"),
+        ("avg_shots_ont_away_L5",  "AwayTeam", "AST"),
+        ("avg_corners_home_L5",     "HomeTeam", "HC"),
+        ("avg_corners_away_L5",     "AwayTeam", "AC"),
+        ("avg_goals_conceded_home_L5", "HomeTeam", "FTAG"),
+        ("avg_goals_conceded_away_L5", "AwayTeam", "FTHG"),
+        ("avg_fouls_committed_home_L5", "HomeTeam", "HF"),
+        ("avg_fouls_committed_away_L5", "AwayTeam", "AF"),
+    ]:
+        db[label] = (
+            db.groupby(team_col)[goal_col]
+              .transform(lambda s: s.shift().rolling(5, min_periods=1).mean())
+        )
+
+    def last5_rate(frame, team_col, wanted):
+        """Calculate win/draw/loss rates over last 5 games"""
+        result_series = (frame['FTR'] == wanted).astype(int)
+        return (
+            result_series.groupby(frame[team_col])
+                 .transform(lambda s: s.shift().rolling(5, min_periods=1).mean())
+        )
+
+    # Performance rates over last 5 games
+    db["win_rate_home_L5"]  = last5_rate(db, "HomeTeam", "H")
+    db["win_rate_away_L5"]  = last5_rate(db, "AwayTeam", "A")
+    db["draw_rate_home_L5"] = last5_rate(db, "HomeTeam", "D")
+    db["draw_rate_away_L5"] = last5_rate(db, "AwayTeam", "D")
+    db["loss_rate_home_L5"] = last5_rate(db, "HomeTeam", "A")
+    db["loss_rate_away_L5"] = last5_rate(db, "AwayTeam", "H")
+
+    # Team strength differential
+    db["home_strength_diff"] = (
+        (db["avg_goals_L5_home"] - db["avg_goals_conceded_home_L5"])
+        - (db["avg_goals_L5_away"] - db["avg_goals_conceded_away_L5"])
+    )
+
+    # Composite offensive indices (weighted combination of attacking metrics)
+    db["offensive_index_home"] = (
+        0.4*db["avg_goals_L5_home"] + 0.3*db["avg_shots_home_L5"] + 0.3*db["avg_shots_ont_home_L5"]
+    )
+    db["offensive_index_away"] = (
+        0.4*db["avg_goals_L5_away"] + 0.3*db["avg_shots_away_L5"] + 0.3*db["avg_shots_ont_away_L5"]
+    )
+    
+    # Composite defensive solidity indices
+    db["defensive_solidity_home"] = (
+        0.5*db["avg_goals_conceded_home_L5"] +
+        0.25*db["avg_fouls_committed_home_L5"] +
+        0.25*(1 - db["win_rate_home_L5"])
+    )
+    db["defensive_solidity_away"] = (
+        0.5*db["avg_goals_conceded_away_L5"] +
+        0.25*db["avg_fouls_committed_away_L5"] +
+        0.25*(1 - db["win_rate_away_L5"])
+    )
+
+    # Head-to-head historical performance (last 5 encounters)
+    h2h_home, h2h_away = [], []
+    for idx, row in db.iterrows():
+        home, away = row["HomeTeam"], row["AwayTeam"]
+        past = db.loc[:idx-1]
+        past_h2h = past[((past["HomeTeam"] == home) & (past["AwayTeam"] == away)) |
+                        ((past["HomeTeam"] == away) & (past["AwayTeam"] == home))].tail(5)
+        if not past_h2h.empty:
+            home_goals = past_h2h.apply(
+                lambda r: r["FTHG"] if r["HomeTeam"] == home else r["FTAG"], axis=1
+            )
+            away_goals = past_h2h.apply(
+                lambda r: r["FTAG"] if r["HomeTeam"] == home else r["FTHG"], axis=1
+            )
+            h2h_home.append(home_goals.mean())
+            h2h_away.append(away_goals.mean())
+        else:
+            h2h_home.append(np.nan)
+            h2h_away.append(np.nan)
+
+    db["h2h_avg_home_goals_last_5"] = h2h_home
+    db["h2h_avg_away_goals_last_5"] = h2h_away
+
+    # Handle Asian odds if present
+    if "odds_home_asian" in db.columns:
+        db["odds_home_asian"].fillna(db["odds_home_asian"].mean(), inplace=True)
+    if "odds_away_asian" in db.columns:
+        db["odds_away_asian"].fillna(db["odds_away_asian"].mean(), inplace=True)
+
+    # Fill NaN values in rolling features using team-specific means
+    rolling_cols = [c for c in db.columns if "_L5" in c] + [
+        "offensive_index_home", "offensive_index_away",
+        "defensive_solidity_home", "defensive_solidity_away"
+    ]
+    for col in rolling_cols:
+        if "home" in col:
+            db[col] = db.groupby("HomeTeam")[col].transform(lambda s: s.fillna(s.mean()))
+        elif "away" in col:
+            db[col] = db.groupby("AwayTeam")[col].transform(lambda s: s.fillna(s.mean()))
+
+    # Final NaN fill for head-to-head features
+    db["h2h_avg_home_goals_last_5"].fillna(db["h2h_avg_home_goals_last_5"].mean(), inplace=True)
+    db["h2h_avg_away_goals_last_5"].fillna(db["h2h_avg_away_goals_last_5"].mean(), inplace=True)
+
+    return db
+
+
 def preprocess_data(db):
     """
     Preprocesses the raw data.
     - Strips whitespace from 'Referee' names.
     - Averages betting odds and drops original odds columns.
-    - Drops 'Div' and 'Date' columns.
     - Maps 'HomeTeam' and 'AwayTeam' to integer IDs (though OHE is used later).
+    - Applies feature engineering to create rolling statistics and composite indices.
+    - Drops 'Div' and 'Date' columns.
     """
     # Strip trailing whitespace from referee names for consistency
     if 'Referee' in db.columns:
@@ -72,11 +196,6 @@ def preprocess_data(db):
     # Drop original betting odds columns
     db.drop(columns=home_win_cols + draw_cols + away_win_cols, inplace=True, errors='ignore')
 
-    # Drop 'Div' (Division) and 'Date' columns
-    # 'Div' might be redundant if data is for a single league.
-    # 'Date' is typically handled by chronological splitting or feature engineering (e.g., day of week).
-    db.drop(columns=['Div', 'Date'], inplace=True, errors='ignore')
-
     # Map team names to unique integer IDs.
     # While XGBoost can handle categorical features, OHE is often preferred for clarity and consistency.
     # These IDs are not directly used if OHE is applied to original team name columns.
@@ -85,6 +204,15 @@ def preprocess_data(db):
         team_to_id = {team: idx for idx, team in enumerate(teams)}
         db['HomeTeam_ID'] = db['HomeTeam'].map(team_to_id)
         db['AwayTeam_ID'] = db['AwayTeam'].map(team_to_id)
+
+    # Apply feature engineering - this is the key addition!
+    db = add_engineered_features(db)
+
+    # Drop 'Div' (Division), 'Date', and 'FTR' columns
+    # 'Div' might be redundant if data is for a single league.
+    # 'Date' is typically handled by chronological splitting or feature engineering (e.g., day of week).
+    # 'FTR' is needed for feature engineering but not for final features
+    db.drop(columns=['Div', 'Date', 'FTR'], inplace=True, errors='ignore')
 
     return db
 
